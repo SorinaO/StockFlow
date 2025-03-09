@@ -3,6 +3,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
 
+
 # Sample stock data for testing purposes
 stock_data = {
     'Product': ['T-Shirt', 'Jeans', 'Jacket', 'Shoes', 'Hat'],
@@ -11,14 +12,20 @@ stock_data = {
     'Location': ['A1', 'B2', 'C3', 'D4', 'E5']
 }
 
+
 # Initialize session state for stock and stock history
 if 'df' not in st.session_state:
     st.session_state.df = pd.DataFrame(stock_data)
+
+if 'stock_history' not in st.session_state:
+    st.session_state.stock_history = []  # Store stock movement logs
+
 
 # Function to display the current stock overview
 def display_current_stock_overview():
     st.subheader("Current Stock Overview")
     st.dataframe(st.session_state.df[['Product', 'Stock Level', 'Min Stock Level', 'Location']])
+
 
 # Function to display low stock alerts
 def display_low_stock_alerts():
@@ -29,6 +36,7 @@ def display_low_stock_alerts():
     st.subheader("Low Stock Alerts")
     for index, row in low_stock_df.iterrows():
         st.warning(f"Product {row['Product']} is below the minimum stock level!")
+
 
 # Function to plot stock trends
 def plot_stock_trends():
@@ -41,6 +49,7 @@ def plot_stock_trends():
     ax.legend()
     st.pyplot(fig)
 
+
 # Function to forecast future stock requirements
 def forecast_stock_requirements():
     st.subheader("Forecast Future Stock Requirements")
@@ -52,44 +61,73 @@ def forecast_stock_requirements():
     
     st.dataframe(forecasted_df[['Product', 'Stock Level', 'Forecasted Stock Level']])
 
-# Function to log stock discrepancies
-def log_stock_discrepancy():
-    st.subheader("Log Stock Discrepancy")
-      # Ensure session state has stock history initialized
-    if 'stock_history' not in st.session_state:
-        st.session_state.stock_history = []  
-    discrepancy_product = st.selectbox("Select Product with Discrepancy", st.session_state.df['Product'])
-    discrepancy_quantity = st.number_input("Enter Discrepancy Quantity", min_value=1) # Ensure at least 1 unit
-    if st.button('Log Discrepancy'):
-        # Update stock levels
-        st.session_state.df.loc[st.session_state.df['Product'] == discrepancy_product, 'Stock Level'] -= discrepancy_quantity
-        # Append new entry to stock movement history
-        st.session_state.stock_history.append(
-            {"Product": discrepancy_product, "Quantity Change": -discrepancy_quantity, "Reason": "Discrepancy"})
-        st.success(f"Logged discrepancy for {discrepancy_product}: {discrepancy_quantity} units")
-        # Rerun the app to reflect changes
-        st.rerun()
 
-
-def display_stock_movement_history():
-    st.subheader("Stock Movement History")
+# Function to log stock movements (Inbound, Outbound, Adjustments), including discrepancies
+def log_stock_movement():
+    st.subheader("Log Stock Movement")
 
     # Ensure session state has stock history initialized
     if 'stock_history' not in st.session_state:
         st.session_state.stock_history = []  
 
-    # Create DataFrame (empty if no data)
-    history_df = pd.DataFrame(st.session_state.stock_history, columns=['Product', 'Quantity Change', 'Reason'])
+    # Select product and movement type
+    movement_product = st.selectbox("Select Product", st.session_state.df['Product'])
+    movement_type = st.selectbox("Select Movement Type", 
+                                 ['Restocking', 'Returned Goods', 'Stock Adjustment', 'Sales', 
+                                  'Damaged', 'Discrepancy', 'Transfer'])
+
+    movement_quantity = st.number_input(f"Enter Quantity for {movement_type}", min_value=1)
+    reason = None
+
+    # 🔹 Added: Get current stock level of the selected product
+    current_stock = st.session_state.df.loc[st.session_state.df['Product'] == movement_product, 'Stock Level'].values[0]
+
+    # Handle discrepancy-specific input
+    if movement_type == 'Discrepancy':
+        reason = st.selectbox("Select Discrepancy Reason", ['Missing Items', 'Miscount', 'Slot Adjustment'])
+
+    if st.button('Log Movement'):
+        # Adjust stock levels based on movement type
+        if movement_type in ['Restocking', 'Returned Goods', 'Stock Adjustment']:
+            st.session_state.df.loc[st.session_state.df['Product'] == movement_product, 'Stock Level'] += movement_quantity
+            reason = "New Stock Arrival" if movement_type == "Restocking" else movement_type
+
+        elif movement_type in ['Sales', 'Damaged', 'Transfer']:
+            # 🔹 Added: Ensure stock doesn't go negative
+            if movement_quantity > current_stock:
+                st.error(f"Cannot process {movement_type}: Not enough stock available!")
+                return
+            st.session_state.df.loc[st.session_state.df['Product'] == movement_product, 'Stock Level'] -= movement_quantity
+            reason = movement_type
+
+        elif movement_type == 'Discrepancy':
+            st.session_state.df.loc[st.session_state.df['Product'] == movement_product, 'Stock Level'] -= movement_quantity
+            reason = reason  # Already selected in the dropdown
+        
+        # Append the stock movement to history
+        st.session_state.stock_history.append(
+            {"Product": movement_product, 
+             "Quantity Change": movement_quantity if movement_type in ['Restocking', 'Returned Goods', 'Stock Adjustment'] else -movement_quantity, 
+             "Reason": reason, "Movement Type": movement_type}
+        )
+
+        st.success(f"Logged {movement_type} for {movement_product}: {movement_quantity} units")
+        st.rerun()
+
+# Function to display stock movement history
+def display_stock_movement_history():
+    st.subheader("Stock Movement History")
+
+    history_df = pd.DataFrame(st.session_state.stock_history, columns=['Product', 'Quantity Change', 'Reason', 'Movement Type'])
 
     if not history_df.empty:
-        # Add a filter dropdown for product selection
-        product_filter = st.selectbox("Filter by Product", ["All"] + list(history_df["Product"].unique()))
+        # Add a filter dropdown for movement type
+        movement_filter = st.selectbox("Filter by Movement Type", ["All"] + list(history_df["Movement Type"].unique()))
 
         # Apply filter
-        if product_filter != "All":
-            history_df = history_df[history_df["Product"] == product_filter]
+        if movement_filter != "All":
+            history_df = history_df[history_df["Movement Type"] == movement_filter]
 
-    # Display DataFrame
     st.dataframe(history_df)
 
 
@@ -100,7 +138,7 @@ def main():
     display_current_stock_overview()
     display_low_stock_alerts()
     plot_stock_trends()
-    log_stock_discrepancy()
+    log_stock_movement()
     display_stock_movement_history()
     forecast_stock_requirements()
 
