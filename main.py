@@ -38,18 +38,6 @@ def display_low_stock_alerts():
         st.warning(f"Product {row['Product']} is below the minimum stock level!")
 
 
-# Function to plot stock trends
-def plot_stock_trends():
-    st.subheader("Stock Level Trends")
-    fig, ax = plt.subplots()
-    ax.plot(st.session_state.df['Product'], st.session_state.df['Stock Level'], marker='o', label='Stock Level')
-    ax.set_xlabel('Product')
-    ax.set_ylabel('Stock Level')
-    ax.set_title('Stock Level Trend')
-    ax.legend()
-    st.pyplot(fig)
-
-
 # Function to forecast future stock requirements
 def forecast_stock_requirements():
     st.subheader("Forecast Future Stock Requirements")
@@ -76,24 +64,28 @@ def log_stock_movement():
                                  ['Restocking', 'Returned Goods', 'Stock Adjustment', 'Sales', 
                                   'Damaged', 'Discrepancy', 'Transfer'])
 
+    #  Display current stock level
+    current_stock = st.session_state.df.loc[st.session_state.df['Product'] == movement_product, 'Stock Level'].values[0]
+    st.info(f"Current Stock Level: {current_stock}")
+
     movement_quantity = st.number_input(f"Enter Quantity for {movement_type}", min_value=1)
     reason = None
-
-    # 🔹 Added: Get current stock level of the selected product
-    current_stock = st.session_state.df.loc[st.session_state.df['Product'] == movement_product, 'Stock Level'].values[0]
 
     # Handle discrepancy-specific input
     if movement_type == 'Discrepancy':
         reason = st.selectbox("Select Discrepancy Reason", ['Missing Items', 'Miscount', 'Slot Adjustment'])
 
-    if st.button('Log Movement'):
+    # Disable button if quantity is invalid
+    button_label = f"Log {movement_type}"
+    log_button = st.button(button_label, disabled=(movement_quantity > current_stock if movement_type in ['Sales', 'Damaged', 'Transfer'] else False))
+
+    if log_button:
         # Adjust stock levels based on movement type
         if movement_type in ['Restocking', 'Returned Goods', 'Stock Adjustment']:
             st.session_state.df.loc[st.session_state.df['Product'] == movement_product, 'Stock Level'] += movement_quantity
             reason = "New Stock Arrival" if movement_type == "Restocking" else movement_type
 
         elif movement_type in ['Sales', 'Damaged', 'Transfer']:
-            # 🔹 Added: Ensure stock doesn't go negative
             if movement_quantity > current_stock:
                 st.error(f"Cannot process {movement_type}: Not enough stock available!")
                 return
@@ -114,6 +106,7 @@ def log_stock_movement():
         st.success(f"Logged {movement_type} for {movement_product}: {movement_quantity} units")
         st.rerun()
 
+
 # Function to display stock movement history
 def display_stock_movement_history():
     st.subheader("Stock Movement History")
@@ -131,17 +124,28 @@ def display_stock_movement_history():
     st.dataframe(history_df)
 
 
+# Function to plot stock trends
+def plot_stock_trends():
+    st.subheader("Stock Level Trends")
+    fig, ax = plt.subplots()
+    ax.plot(st.session_state.df['Product'], st.session_state.df['Stock Level'], marker='o', label='Stock Level')
+    ax.set_xlabel('Product')
+    ax.set_ylabel('Stock Level')
+    ax.set_title('Stock Level Trend')
+    ax.legend()
+    st.pyplot(fig)
+
+
 
 # Main code
 def main():
     st.title("Stock & System Dashboard")
     display_current_stock_overview()
     display_low_stock_alerts()
-    plot_stock_trends()
     log_stock_movement()
     display_stock_movement_history()
     forecast_stock_requirements()
-
+    plot_stock_trends()
 # Run the main function
 if __name__ == "__main__":
     main()
