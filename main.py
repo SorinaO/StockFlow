@@ -11,7 +11,7 @@ stock_data = {
     'Location': ['A1', 'B2', 'C3', 'D4', 'E5']
 }
 
-# Initialize session state
+# Initialize session state for stock and stock history
 if 'df' not in st.session_state:
     st.session_state.df = pd.DataFrame(stock_data)
 
@@ -55,12 +55,44 @@ def forecast_stock_requirements():
 # Function to log stock discrepancies
 def log_stock_discrepancy():
     st.subheader("Log Stock Discrepancy")
+      # Ensure session state has stock history initialized
+    if 'stock_history' not in st.session_state:
+        st.session_state.stock_history = []  
     discrepancy_product = st.selectbox("Select Product with Discrepancy", st.session_state.df['Product'])
-    discrepancy_quantity = st.number_input("Enter Discrepancy Quantity", min_value=0)
+    discrepancy_quantity = st.number_input("Enter Discrepancy Quantity", min_value=1) # Ensure at least 1 unit
     if st.button('Log Discrepancy'):
+        # Update stock levels
         st.session_state.df.loc[st.session_state.df['Product'] == discrepancy_product, 'Stock Level'] -= discrepancy_quantity
-        st.write(f"Logged discrepancy for {discrepancy_product}: {discrepancy_quantity} units")
+        # Append new entry to stock movement history
+        st.session_state.stock_history.append(
+            {"Product": discrepancy_product, "Quantity Change": -discrepancy_quantity, "Reason": "Discrepancy"})
+        st.success(f"Logged discrepancy for {discrepancy_product}: {discrepancy_quantity} units")
+        # Rerun the app to reflect changes
         st.rerun()
+
+
+def display_stock_movement_history():
+    st.subheader("Stock Movement History")
+
+    # Ensure session state has stock history initialized
+    if 'stock_history' not in st.session_state:
+        st.session_state.stock_history = []  
+
+    # Create DataFrame (empty if no data)
+    history_df = pd.DataFrame(st.session_state.stock_history, columns=['Product', 'Quantity Change', 'Reason'])
+
+    if not history_df.empty:
+        # Add a filter dropdown for product selection
+        product_filter = st.selectbox("Filter by Product", ["All"] + list(history_df["Product"].unique()))
+
+        # Apply filter
+        if product_filter != "All":
+            history_df = history_df[history_df["Product"] == product_filter]
+
+    # Display DataFrame
+    st.dataframe(history_df)
+
+
 
 # Main code
 def main():
@@ -69,6 +101,7 @@ def main():
     display_low_stock_alerts()
     plot_stock_trends()
     log_stock_discrepancy()
+    display_stock_movement_history()
     forecast_stock_requirements()
 
 # Run the main function
