@@ -1,4 +1,4 @@
-# StockFlow
+## StockFlow
 
 StockFlow is a Streamlit-based web application designed to help you manage and monitor your warehouse stock levels. It provides features for displaying current stock levels, alerting you when stock is low, forecasting future stock requirements, logging stock movements, and visualizing stock trends.
 
@@ -45,3 +45,5 @@ Streamlit
 Pandas
 Matplotlib
 NumPy
+
+Streamlit Cloud: https://stockflow-app.streamlit.app
