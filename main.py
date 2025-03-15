@@ -38,14 +38,15 @@ def display_low_stock_alerts():
         st.warning(f"Product {row['Product']} is below the minimum stock level!")
 
 
-# Function to forecast future stock requirements
-def forecast_stock_requirements():
-    st.subheader("Forecast Future Stock Requirements")
+# Function to Stock Requirement Forecast
+def stock_requirement_forecast():
+    st.subheader("Stock Requirement Forecast")
     forecast_period = st.slider("Select forecast period (days)", min_value=1, max_value=30, value=7)
     
     forecasted_df = st.session_state.df.copy()
-    forecasted_df['Forecasted Stock Level'] = (forecasted_df['Stock Level'] - 
-                                               (forecasted_df['Stock Level'] // 10 * forecast_period)).clip(lower=0)
+    forecasted_df['Forecasted Stock Level'] = (
+        forecasted_df['Stock Level'] - (forecasted_df['Stock Level'] * 0.1 * forecast_period)
+    ).clip(lower=0)  # Ensure stock level never goes negative
     
     st.dataframe(forecasted_df[['Product', 'Stock Level', 'Forecasted Stock Level']])
 
@@ -144,7 +145,7 @@ def main():
     display_low_stock_alerts()
     log_stock_movement()
     display_stock_movement_history()
-    forecast_stock_requirements()
+    stock_requirement_forecast()
     plot_stock_trends()
 # Run the main function
 if __name__ == "__main__":
