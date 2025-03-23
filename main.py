@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
+import time
 
 
 # Sample stock data for testing purposes
@@ -105,6 +106,7 @@ def log_stock_movement():
         )
 
         st.success(f"Logged {movement_type} for {movement_product}: {movement_quantity} units")
+        time.sleep(2)
         st.rerun()
 
 
