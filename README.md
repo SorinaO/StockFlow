@@ -35,7 +35,8 @@ pip install streamlit pandas matplotlib numpy
 ```$
 streamlit run stockflow_app.py
 
-```<br><br>
+```
+
 
 ## 🧭 Usage Guide
 🖥️ Open the app in your browser (automatically opens after running)
