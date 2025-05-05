@@ -73,5 +73,5 @@ Add 🧮 custom formulas for more complex forecasting needs
 Expand with 📤 export functionality (CSV/PDF) for production use<br><br>
 
 🌟 Empower your inventory management with real-time insights and intuitive controls!
-st.markdown("[Visit StockFlow](https://stockflow-app.streamlit.app)")
+[Visit StockFlow](https://stockflow-app.streamlit.app)
 
