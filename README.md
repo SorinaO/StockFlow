@@ -72,7 +72,7 @@ All data is stored in Streamlit's session state (will reset when closing the app
 Add 🧮 custom formulas for more complex forecasting needs
 Expand with 📤 export functionality (CSV/PDF) for production use<br><br>
 
-🌟 Empower your inventory management with real-time insights and intuitive controls!<br><br>
+🌟 Empower your inventory management with real-time insights and intuitive controls!
 
 [Visit StockFlow](https://stockflow-app.streamlit.app)
 
