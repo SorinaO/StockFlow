@@ -74,4 +74,3 @@ Expand with 📤 export functionality (CSV/PDF) for production use<br><br>
 
 🌟 Empower your inventory management with real-time insights and intuitive controls!<br><br>
 
-## Pro Tip : Add ?embed_options=show_toolbar to the URL to hide the Streamlit menu for presentations!
